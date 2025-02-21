@@ -6,8 +6,6 @@ Mayoware is a modular Command and Control (C2) system designed for remote client
 
 * Agent: A lightweight client that connects to the C2 server and executes received instructions.
 
-* Additional Utilities: Various scripts and configurations to enhance functionality.
-
 ## Installation
 
 ### Prerequisites
