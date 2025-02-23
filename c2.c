@@ -197,7 +197,7 @@
                              break;
                          }
                          else if (strncmp(command, "help", 4) == 0) {
-                             help_command()
+                             help_command();
                          }
                          else {
                              write(clients[selected_client].socket, command, sizeof(command));                        
