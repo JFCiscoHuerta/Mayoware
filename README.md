@@ -30,7 +30,7 @@ Compile the C2 Server:
 
 Compile the Agent:
 
-```gcc -o agent agent.c```
+```i686-w64-mingw32-gcc -o agent.exe agent.c -lwininet -lwsock32```
 
 Start the C2 Server:
 
