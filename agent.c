@@ -167,8 +167,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrev, LPSTR lpCmdLine, int 
     struct sockaddr_in ServAddr;
     WSADATA wsaData;
 
-    char *ServIP = ServIP;
-    unsigned short ServPort = ServPort;
+    char *ServIP = SERVER_IP;
+    unsigned short ServPort = SERVER_PORT;
 
     if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0) {
         return 1;
