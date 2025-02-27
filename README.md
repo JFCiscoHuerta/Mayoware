@@ -26,7 +26,7 @@ Clone the repository:
 
 Compile the C2 Server:
 
-```gcc -o c2_server c2_server.c -pthread```
+```gcc -o c2_server c2_server.c```
 
 Compile the Agent:
 
