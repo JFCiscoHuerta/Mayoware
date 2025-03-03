@@ -38,6 +38,16 @@ Start the C2 Server:
 
 Deploy the Agent on a target system and execute it
 
+## 🐳 Docker
+
+To build the container image, use the following command:
+
+```docker build -t c2 .```
+
+To run the container in interactive mode:
+
+```docker run -it c2```
+
 # Usage
 
 ## C2 Server Commands
