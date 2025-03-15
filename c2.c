@@ -315,6 +315,7 @@ void generate_agent_with_ip() {
      }
  }
  
+ #ifndef TESTING
  int main() {
      int server_socket, new_socket;
      struct sockaddr_in server_addr, client_addr;
@@ -372,4 +373,4 @@ void generate_agent_with_ip() {
      return 0;
  }
  
- 
+#endif
