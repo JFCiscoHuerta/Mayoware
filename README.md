@@ -38,7 +38,24 @@ Start the C2 Server:
 
 Deploy the Agent on a target system and execute it
 
-## 🐳 Docker
+
+## Testing
+
+To run the unit tests, ensure that the required dependencies are installed:
+
+```sudo apt-get update```
+
+```sudo apt-get install libcriterion-dev```
+
+Build the tests using:
+
+```gcc -DTESTING -o test_c2 c2.c test_c2.c -lcriterion -lpthread```
+
+Then, execute the tests with:
+
+```./test_c2```
+
+## Docker
 
 To build the container image, use the following command:
 
