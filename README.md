@@ -26,17 +26,44 @@ Clone the repository:
 
 Compile the C2 Server:
 
-```gcc -o c2_server c2_server.c -pthread```
+```gcc -o c2_server c2_server.c```
 
 Compile the Agent:
 
-```gcc -o agent agent.c```
+```i686-w64-mingw32-gcc -o agent.exe agent.c -lwininet -lwsock32```
 
 Start the C2 Server:
 
 ```./c2_server```
 
 Deploy the Agent on a target system and execute it
+
+
+## Testing
+
+To run the unit tests, ensure that the required dependencies are installed:
+
+```sudo apt-get update```
+
+```sudo apt-get install libcriterion-dev```
+
+Build the tests using:
+
+```gcc -DTESTING -o test_c2 c2.c test_c2.c -lcriterion -lpthread```
+
+Then, execute the tests with:
+
+```./test_c2```
+
+## Docker
+
+To build the container image, use the following command:
+
+```docker build -t c2 .```
+
+To run the container in interactive mode:
+
+```docker run -it c2```
 
 # Usage
 
